@@ -31,9 +31,8 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    fluidPage(title = "Interpolate Data",
              sidebarLayout(
-               sidebarPanel(
-                 selectInput("fileID", "Choose File", choices = idNms),
-                 checkboxInput("trendLine", "Add trend line"),
+               sidebarPanel(uiOutput('idNms'),
+                checkboxInput("trendLine", "Add trend line"),
                  numericInput(inputId = "fileStart", label = strong("Choose File Start"),
                               value = NA),
                  numericInput(inputId = "fileEnd", label = strong("Choose File End"),
@@ -118,14 +117,18 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
   # Get unique study and participant ids from folder
-  allFls <- list.files(path = paste0(here::here(),"/interpolationApp/rawData"), pattern = ".csv$")
-  idNms <- sapply(allFls, function(x) strsplit(x, "\\_|\\."))
-  idNms <- sapply(idNms, function(x) x[2])
-  idNms <- unique(idNms)
+  output$idNms <- renderUI({
+    allFls <- list.files(path = paste0(here::here(),"/rawData"), pattern = ".csv$")
+    idNms <- sapply(allFls, function(x) strsplit(x, "\\_|\\."))
+    idNms <- sapply(idNms, function(x) x[2])
+    idNms <- unique(idNms)
+    selectInput("fileID", "Choose File", choices = idNms)
+  })
+  
   
   # Read breath file based on file choice
   bData <- reactive({
-    breathfileName <- paste0(here::here(),"/interpolationApp/rawData/","breath_",input$fileID,".csv")
+    breathfileName <- paste0(here::here(),"/rawData/","breath_",input$fileID,".csv")
     df <- read.csv(paste(breathfileName), header = TRUE)
     if(!is.na(input$fileStart)){df <- df[which(df$Time > input$fileStart),]}
     if(!is.na(input$fileEnd)){df <- df[which(df$Time < input$fileEnd),]}
@@ -139,7 +142,7 @@ server <- function(input, output, session) {
   
   # Read beat file based on file choice
   cvData <- reactive({
-    cvfileName <- paste0(here::here(),"/interpolationApp/rawData/","beat_",input$fileID,".csv")
+    cvfileName <- paste0(here::here(),"/rawData/","beat_",input$fileID,".csv")
     beatdf <- read.csv(paste(cvfileName), header = TRUE)
     if(!is.na(input$fileStart)){beatdf <- beatdf[which(beatdf$Time >= input$fileStart),]}
     if(!is.na(input$fileEnd)){beatdf <- beatdf[which(beatdf$Time <= input$fileEnd),]}
